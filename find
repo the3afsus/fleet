@@ -3,3 +3,70 @@ Write-Host `n;foreach ($file in @('C:\Windows\Panther\unattend.xml', 'C:\Windows
 
 https://github.com/nickvourd/Windows-Local-Privilege-Escalation-Cookbook/blob/master/Lab-Setup-Scripts/HardcodedCredentialsDotNetApp.ps1
 
+
+### 1 
+$tasks = Get-ScheduledTask | ForEach-Object {
+    $info = [PSCustomObject]@{
+        TaskName     = $_.TaskName
+        TaskPath     = $_.TaskPath
+        Author       = $_.Author
+        UserId       = $_.Principal.UserId
+        RunLevel     = $_.Principal.RunLevel
+        Action       = ($_.Actions | ForEach-Object { $_.Execute + ' ' + $_.Arguments })
+    }
+    $info
+}
+
+$tasks | Where-Object { $_.UserId -eq "SYSTEM" } | Format-Table -AutoSize
+
+
+### 2
+# Function to check if file or folder is user-writable
+function Test-IsWritable {
+    param ($Path)
+    try {
+        $acl = Get-Acl $Path -ErrorAction Stop
+        foreach ($access in $acl.Access) {
+            if ($access.FileSystemRights -match "Write" -and $access.IdentityReference -match "Users") {
+                return $true
+            }
+        }
+    } catch {
+        return $false
+    }
+    return $false
+}
+
+# Analyze SYSTEM tasks for weak paths
+Get-ScheduledTask | Where-Object { $_.Principal.UserId -eq "SYSTEM" } |
+ForEach-Object {
+    $_.Actions | ForEach-Object {
+        $exe = $_.Execute
+        $args = $_.Arguments
+        $fullPath = if ($exe -notmatch "^(?:[a-zA-Z]:\\|\\\\)") { "C:\Windows\System32\$exe" } else { $exe }
+        [PSCustomObject]@{
+            TaskName = $_.TaskName
+            Executable = $fullPath
+            Writable = Test-IsWritable $fullPath
+            Arguments = $args
+        }
+    }
+} | Where-Object { $_.Writable -eq $true }
+
+
+
+### 3
+Get-ScheduledTask | ForEach-Object {
+    $_.Actions | ForEach-Object {
+        if ($_.Execute -match "\.(ps1|bat|cmd|vbs)$") {
+            $scriptPath = $_.Execute
+            if (Test-Path $scriptPath -and (Test-IsWritable $scriptPath)) {
+                [PSCustomObject]@{
+                    TaskName = $_.TaskName
+                    ScriptPath = $scriptPath
+                    Writable = $true
+                }
+            }
+        }
+    }
+}
