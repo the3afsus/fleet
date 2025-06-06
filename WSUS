@@ -1,0 +1,13 @@
+# Load the WSUS .NET assembly
+[reflection.assembly]::LoadWithPartialName("Microsoft.UpdateServices.Administration") | Out-Null
+
+# Connect to the WSUS server
+$wsus = [Microsoft.UpdateServices.Administration.AdminProxy]::GetUpdateServer("localhost", $False)
+
+# Get all registered computers (WSUS clients)
+$computers = $wsus.GetComputerTargetGroups() | ForEach-Object {
+    $_.GetComputerTargets()
+} | Select-Object -ExpandProperty FullDomainName -Unique
+
+# Output the list
+$computers | Sort-Object
