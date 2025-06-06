@@ -1,3 +1,29 @@
+## Upload files:
+$filename="ps2exe.1.0.15.nupkg"
+$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$session.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 Edg/137.0.0.0"
+Invoke-WebRequest -UseBasicParsing -Uri "http://localhost:3333/upload" `
+-Method "POST" `
+-WebSession $session `
+-Headers @{
+"Accept"="*/*"
+  "Accept-Encoding"="gzip, deflate, br, zstd"
+  "Accept-Language"="fr,fr-FR;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6"
+  "Origin"="http://localhost:6666"
+  "Referer"="http://localhost:6666/upload"
+  "Sec-Fetch-Dest"="empty"
+  "Sec-Fetch-Mode"="cors"
+  "Sec-Fetch-Site"="same-origin"
+  "sec-ch-ua"="`"Microsoft Edge`";v=`"137`", `"Chromium`";v=`"137`", `"Not/A)Brand`";v=`"24`""
+  "sec-ch-ua-mobile"="?0"
+  "sec-ch-ua-platform"="`"Windows`""
+} `
+-ContentType "multipart/form-data; boundary=----WebKitFormBoundaryCb70KBlwohZczfMl" `
+-Body ([System.Text.Encoding]::UTF8.GetBytes("------WebKitFormBoundaryCb70KBlwohZczfMl$([char]13)$([char]10)Content-Disposition: form-data; name=`"files`"; filename=`"$filename`"$([char]13)$([char]10)Content-Type: application/octet-stream$([char]13)$([char]10)$([char]13)$([char]10)$([char]13)$([char]10)------WebKitFormBoundaryCb70KBlwohZczfMl--$([char]13)$([char]10)"))
+
+
+
+
 # Load the WSUS .NET assembly
 [reflection.assembly]::LoadWithPartialName("Microsoft.UpdateServices.Administration") | Out-Null
 
