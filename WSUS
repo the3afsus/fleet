@@ -1,3 +1,51 @@
+#############
+# Example 1: Load the WSUS Assembly
+[reflection.assembly]::LoadWithPartialName("Microsoft.UpdateServices.Administration")
+$wsus = [Microsoft.UpdateServices.Administration.AdminProxy]::GetUpdateServer("localhost", $False)
+
+$computers = $wsus.GetComputerTargetGroups() | ForEach-Object {
+    $_.GetComputerTargets()
+}
+
+# Example 2: Get All Computers and Their Update Status
+foreach ($computer in $computers) {
+    $summary = $computer.GetUpdateInstallationSummary()
+    [PSCustomObject]@{
+        ComputerName = $computer.FullDomainName
+        UpdatesInstalled = $summary.InstalledCount
+        UpdatesNeeded = $summary.NotInstalledCount
+        UpdatesFailed = $summary.FailedCount
+        LastSync = $computer.LastReportedStatusTime
+    }
+}
+
+# Example 3: Export Update Status to CSV
+$report = foreach ($group in $wsus.GetComputerTargetGroups()) {
+    foreach ($computer in $group.GetComputerTargets()) {
+        $summary = $computer.GetUpdateInstallationSummary()
+        [PSCustomObject]@{
+            GroupName = $group.Name
+            ComputerName = $computer.FullDomainName
+            Installed = $summary.InstalledCount
+            Needed = $summary.NotInstalledCount
+            Failed = $summary.FailedCount
+            LastReported = $computer.LastReportedStatusTime
+        }
+    }
+}
+
+$report | Export-Csv -Path "C:\WSUS_Computer_Report.csv" -NoTypeInformation
+
+
+#################################################################################################################
+#################################################################################################################
+#################################################################################################################
+
+
+
+
+
+
 ## Upload files:
 $filename="ps2exe.1.0.15.nupkg"
 $session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
